@@ -16,6 +16,9 @@ Instruction-only. No keys, no wallets, no code. Every file write still needs a â
 | [lab](lab/SKILL.md) | "lab", "backtest", "is this edge", "promote" | `/terminal/lab/<exp_id>/exp.md` |
 | [wallet-dossier](wallet-dossier/SKILL.md) | a wallet address or handle, "who is this wallet" | `/terminal/entities/wallets/<chain>_<address>.md` |
 | [desk-automations](desk-automations/SKILL.md) | "flush <cron>", "intake stage0", "fix cron" | lands one `/research/` file per flush |
+| [universe-log](universe-log/SKILL.md) | "universe", "base rate", Universe Log cron | `/research/universe-YYYYMMDD.md` |
+| [pm-forecast](pm-forecast/SKILL.md) | "pm", "polymarket", "forecast", "pm grade" | `/research/pm-YYYYMMDD.md` |
+| [funding-carry](funding-carry/SKILL.md) | "funding", "carry", "carry grade" | `/terminal/lab/carry-YYYYMMDD.md` |
 
 Global rules (evidence labels, prediction before outcome, "staged, not saved," the capital rung, the kill switch) live in [SOUL.md](SOUL.md). Paste it into Workspace â†’ Identity; it is not a skill.
 
@@ -26,7 +29,18 @@ In HypurrClaw, open Browse skills and paste one folder URL at a time:
 https://github.com/blakejaraczeski-lab/hypurrclaw-desk-skills/tree/main/<skill>
 ```
 
-Suggested order: `ca-intake`, `desk`, `daily-review`, `desk-automations`, `cost-bench`, `lab`, `deep-dd`, `wallet-dossier`.
+Suggested order: `ca-intake`, `desk`, `daily-review`, `desk-automations`, `universe-log`, `cost-bench`, `lab`, `pm-forecast`, `funding-carry`, `deep-dd`, `wallet-dossier`.
+
+## Sleeves
+Five ways to use $100, each measured in shadow against its own benchmark before any money moves. Capital goes only to a sleeve whose `lab` experiment passes.
+
+| Sleeve | Benchmark | Evidence needed |
+|--------|-----------|-----------------|
+| Memecoin runs (ca-intake) | universe base rate | 20+ graded, beats base rate out of sample |
+| Universe base rate (universe-log) | all eligible tokens | 200+ labeled rows |
+| Polymarket calibration (pm-forecast) | market price Brier | 50+ graded, beats market |
+| Funding carry (funding-carry) | zero | 20+ graded, positive median net |
+| HL range breakout (built-in paper strategy) | zero | 30+ paper trades, positive after fees |
 
 ## The loop
 ```
