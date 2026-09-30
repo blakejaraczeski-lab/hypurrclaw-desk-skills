@@ -8,7 +8,7 @@ description: Experiments, backtests, and promotion decisions. Use when Blake say
 A backtest generates hypotheses; it does not prove edge. The lab's dataset is the desk's own graded runs (shadow results: predictions made before outcomes, graded after). One file per experiment: `/terminal/lab/<exp_id>/exp.md`.
 
 ## Ids
-`exp-NNNN-<slug>`, numbered one higher than the highest existing `exp-*` folder. Killed ids are never reused or rescued; fork a new id.
+`exp-NNNN-<slug>`, numbered one higher than the highest existing `exp-*` folder (`listFiles` with path `/terminal/lab`; never bare). Killed ids are never reused or rescued; fork a new id.
 
 ## Status ladder
 `DESIGN -> FROZEN -> RUNNING -> OOS_REVIEW -> PASSED | FAILED`, or `KILLED` at any point.
