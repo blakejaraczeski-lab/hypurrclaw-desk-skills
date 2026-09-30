@@ -13,12 +13,18 @@ Turns a pasted contract address into a graded record. The built-in token safety 
 - Chain slug: `sol`, `base`, `eth`, `arb`, `bsc`, or `hood`.
 
 ## 2. Check for an open run
-- `listFiles`, then look under `/terminal/runs/` for a `run.md` whose header has the same full mint.
+- Call `listFiles` with path `/terminal/runs` (never bare: the root page returns 100 playbook files first and truncates), then read the `run.md` whose folder name ends with this mint's first 8 characters. Confirm the full mint in its header.
 - Same mint, opened less than 24h ago, status OPEN or WATCH: **reopen** that run. Refresh the live reads and the verdict. Never change its prediction.
 - Otherwise start a **new run**. `run_id` = `YYYYMMDD-HHMMSS-<chain>-<first 8 chars of mint>` in UTC. If an older run exists for the mint, put its id in `continue_of`.
+- If the check itself fails (list or read error), start a new run with `continue_of: unknown`. Never skip the record because the check failed; an unrecorded IGNORE is lost data.
 
 ## 3. Live reads
-Keep tool discovery cheap: at most **3** `searchTools` calls (security, market, holders), one query each. Reuse the tool ids once found. No other research in this skill; `deep-dd` does that.
+Use these catalog tools (all via `executeSafeReadTool`). Find their ids with **one** `searchTools` call, query `analyze token gmgn token security market token snapshot gmgn token top holders`, then reuse them. No other research in this skill; `deep-dd` does that.
+- `analyze token` (address, chain) and `gmgn token security` (chain, address): honeypot, tax, mint and freeze authority, LP.
+- `market token snapshot` (address, chain): price, mcap, liquidity, volume, pair age, venue.
+- `gmgn token top holders` (chain, address) or `token top holders` (mint): concentration and tags.
+
+If `analyze token` leaves authority or tax blank, try `gmgn token security` before marking UNKNOWN.
 - Security: honeypot, buy and sell tax, mint authority, freeze authority, LP lock or burn.
 - Market: price, mcap, liquidity, 24h volume, pair age, venue.
 - Holders: top 10 share excluding pool and vault; bundler, sniper, and dev tags.
