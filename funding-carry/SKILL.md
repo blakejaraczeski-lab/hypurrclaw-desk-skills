@@ -8,10 +8,13 @@ description: Shadow tracker for Hyperliquid funding-rate carry, no trades. Use w
 A structural strategy, not a prediction: when perp funding is persistently positive, a long spot plus short perp of the same size collects funding with little price exposure. The questions are whether the funding persists, whether a hedge exists, and whether it pays after costs. This skill measures that in shadow. It never trades.
 
 ## 1. Scan (`funding scan`)
-- One `searchTools` call for the ids of `hyperliquid all perp metas` (or `hyperliquid perp meta`), `hyperliquid funding history`, `hyperliquid spot markets`, and `hyperliquid orderbook`. Reuse them.
-- Candidates: perps where funding was positive in at least 70% of hours over the last 7 days, sorted by 7-day mean funding. Take the top 8.
-- For each, check for a **spot market for the same asset** on Hyperliquid. No spot leg: mark `hedge: none` (tracked for information; not eligible).
-- Read both orderbooks: spread and depth within 0.5% at $50 and $100 notional per leg.
+Keep it cheap. There is no single call that returns funding for every perp, so screen a fixed list instead of pulling history for all coins.
+- One `searchTools` call for the ids of `hyperliquid market snapshot`, `hyperliquid funding history`, `hyperliquid spot markets`, and `hyperliquid orderbook`. Reuse them.
+- **Hedgeable list only** (a Hyperliquid spot token exists for the same underlying): BTC perp with UBTC spot, ETH perp with UETH spot, SOL perp with USOL spot, HYPE perp with HYPE spot, PURR perp with PURR spot. Confirm each pairing once with `hyperliquid spot markets`; drop any that no longer lists.
+- For each pair: current funding from `hyperliquid market snapshot`, then `hyperliquid funding history` for the last 7 days (this is at most 5 history calls).
+- Funding at exactly 0.00125% per hour is Hyperliquid's baseline rate (about 10.95% APR), not a squeeze. That baseline is still carry: record it as such.
+- Read both orderbooks: spread and depth within 0.5% at $50 notional per leg.
+- Add one row for the highest current-funding perp outside the list, marked `hedge: none` (information only).
 
 ## 2. Shadow entry
 For each eligible candidate, record a hypothetical $50 spot long plus $50 perp short at the current mids:
@@ -21,7 +24,7 @@ For each eligible candidate, record a hypothetical $50 spot long plus $50 perp s
 - Prediction: `claim` "net carry after costs is positive after 7 days," `p`, `invalidation` (funding negative for 24h straight, or spot/perp basis gap above 1%).
 
 ## 3. Save
-One `writeFile` to `/terminal/lab/carry-YYYYMMDD.md`:
+Always stage the file, even when no row is eligible: a scan with zero eligible rows is still a data point. One `writeFile` to `/terminal/lab/carry-YYYYMMDD.md`:
 
 ```
 # carry scan YYYY-MM-DD
