@@ -13,6 +13,7 @@ The desk is **derived**. Runs, reviews, and lab files are the truth; the board i
 - Every `/terminal/lab/*/exp.md` header (status line only).
 - `/terminal/KILL.md` (`active:` line).
 - `listAutomations` for status, then `automation runs` for the latest run of each active automation (status and error only).
+- Sleeve files (read only, newest first): `/research/universe-*.md` (last 7), `/research/pm-*.md` (all with graded rows), `/terminal/lab/carry-*.md` (all), `/terminal/lab/costs-*.md`.
 - Live regime: at most 2 `searchTools` calls to find the Hyperliquid market snapshot and indicators tools; read BTC, ETH, SOL.
 
 Old runs may use the earlier format (`opened_at_utc`, `## gates` with #78 to #81, no `p`). Read what exists; treat missing fields as missing, never guess.
@@ -63,6 +64,17 @@ risk_on_off:
 
 ## lab
 - <exp_id> · status · next
+
+## sleeves
+| sleeve | graded | metric | benchmark | beats benchmark | rung eligible |
+|--------|--------|--------|-----------|-----------------|---------------|
+| memecoin runs | n | hit_rate / brier | base rate from universe | yes/no/n<20 | no |
+| universe base rate | labeled rows | alive % (A-setup screen vs others) | all rows | yes/no/n<200 | n/a |
+| pm-forecast | n | mean brier_desk | mean brier_market | yes/no/n<50 | no |
+| funding-carry | n | median net_usd | 0 | yes/no/n<20 | no |
+| hl breakout (paper) | trades | net pnl after fees | 0 | yes/no/n<30 | no |
+
+`rung eligible` is always `no` until `lab` has PASSED an exp for that sleeve.
 
 ## automations
 - <name> · active|paused · last run ok|failed (<error>)
