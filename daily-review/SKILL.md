@@ -72,7 +72,7 @@ missing_prediction: <run_ids or none>
 
 ## 6. Write
 - **Chat:** stage one `writeFile` to `/research/review-YYYYMMDD.md`. "Staged, tap ✅" until the receipt.
-- **Cron:** a cron cannot land a file. Output **only** one fenced block whose first line is `STAGED WRITE /research/review-YYYYMMDD.md`, then the file body. No prose outside the fence. Blake lands it with `flush Daily Review` (see `desk-automations`).
+- **Run from chat.** Cron output is not stored in full, so a cron cannot land this file (see `desk-automations`). A cron may only remind Blake to type `daily review`.
 
 ## Reply shape (chat, 10 lines max)
 Day, scorecard line, the decision or no-trade line, due count, top 3 queue tasks, then `review staged, tap ✅`.
