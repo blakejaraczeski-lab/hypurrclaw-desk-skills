@@ -8,11 +8,13 @@ description: Writing, testing, fixing, and landing the output of Blake's crons. 
 Platform facts this skill is built on:
 - A cron cannot land a file. Its `writeFile` does not leave a ✅ ticket behind. Crons **produce** a fenced block; Blake **lands** it with `flush`.
 - A cron run is killed if its model step passes **32,000 characters** (`AutomationStepOutputLimitError`). Tool calls and their results count against the run in ways that are not documented, so budget both.
-- A run record keeps only the delivered text. `automation runs` previews cut off at 500 characters; `automation run output` has the full text.
+- **Cron output is not stored in full.** Verified 2026-09-30: `automation run output` returned `outputSource: preview`, `outputMissingReason: no_outbox_rows`, 312 characters. So `flush` (section C) cannot land a cron's file. File-producing work runs from chat. Use crons only for alerts and reminders that are fine as a Telegram message.
+- Cron cost verified: the Universe Log run took about 33k input tokens (vs 398k to 920k for the old Stage-0 cron).
+- Web chat input is capped at 1,000 characters. Automation changes staged in one message share one ticket.
 - Automation kinds: plain cron (`createCronAutomation`), scanner, market alert. File-producing jobs must be plain crons; scanners can't be held to fence-only output.
 - `updateAutomation` edits in place (stages ✅). `automation now` runs one immediately.
 - `listFiles` with no path returns the first 100 root files (the playbooks) and truncates. Always pass a path such as `/terminal/runs` or `/research`.
-- `macro scan v2` is a one-call screener (chain, minLiquidityUsd, minVolume24h, minMarketCapUsd, maxMarketCapUsd, maxTop10HoldersPercent, launchpadStatus, includeScams, limit, sortBy). Use it instead of discovering tokens one by one.
+- `macro scan` (v1) with `mode market` is the working one-call screener (limit at most 25; rows carry address, symbol, mcapUsd, liqUsd, vol24h). `macro scan v2` needs `mode market` too (`mode token` requires an address) and a valid `sortBy`; it returned no data in testing.
 
 ## A. Writing a cron prompt
 Every file-producing cron prompt must:
@@ -27,7 +29,7 @@ Every file-producing cron prompt must:
 ### Stage-0 template (plain cron, every 60 min)
 ```
 Stage-0 SOL scan. Read-only. At most 13 tool calls; 1 searchTools call for ids (macro scan v2, analyze token). Output under 6,000 chars.
-Universe: one macro scan v2 call: chain sol, minLiquidityUsd 15000, minVolume24h 25000, minMarketCapUsd 50000, maxMarketCapUsd 5000000, maxTop10HoldersPercent 35, launchpadStatus migrated, includeScams false, limit 30. Then analyze token on at most 10 of them, best liquidity first.
+Universe: one macro scan (v1) call: mode market, chain sol, minLiquidityUsd 15000, minVolume24h 25000, minMarketCapUsd 50000, maxMarketCapUsd 5000000, limit 25. Then analyze token on at most 10 of them, best liquidity first.
 Gates: not honeypot; buy and sell tax <= 5%; mint and freeze authority off; LP burned or locked (removable fails); top10 ex pool <= 35%; no heavy bundler/sniper/dev cluster; 24h vol not above 50x liq.
 Output only one fenced block. First line exactly: STAGED WRITE /research/stage0-YYYYMMDD-HH.md (UTC). Then:
 # stage0 YYYY-MM-DD HH:00 UTC
