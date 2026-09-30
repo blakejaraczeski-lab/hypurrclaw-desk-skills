@@ -8,7 +8,7 @@ description: Deep due diligence and red-team review on a token that already has 
 `ca-intake` answers "is it safe and tradeable right now." This skill answers "is the story true, and what is the strongest case against it." It extends an existing run; it never opens one.
 
 ## 0. Preconditions
-- Find the token's latest `run.md` under `/terminal/runs/` by full mint. None: run `ca-intake` first, then come back.
+- Call `listFiles` with path `/terminal/runs` (never bare: the root page returns 100 playbook files first and truncates); open the latest run whose folder ends with the mint's first 8 characters and confirm the full mint. None: run `ca-intake` first, then come back.
 - Tool budget: at most **6** `searchTools` calls and **12** reads total. Stop early when the verdict is clear.
 
 ## 1. Narrative to metric
