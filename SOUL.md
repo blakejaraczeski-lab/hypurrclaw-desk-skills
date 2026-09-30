@@ -17,7 +17,14 @@
 - Prediction before outcome: write the claim, a probability (0 to 1), the invalidation, and a horizon end time before giving a verdict. A call with no prediction does not count.
 - Never rewrite a sealed prediction. Grade it when the horizon ends, including IGNORE calls.
 - A file write is not done until the ✅ receipt comes back. Before that, say "staged," never "saved." If several files are needed, report "partial: N of M landed" and list what is left.
-- One pending write at a time. Tap-per-write is the platform rule; design around it.
+- Writes and automation changes staged in one message share one ticket, so one ✅ applies them all. Batch related changes into one message.
+
+## Tools
+- Do not call `getToolDetails`; it stalls for minutes. Call the tool directly through `executeSafeReadTool` with your best inputs. If it returns `invalid_input`, fix the inputs from the listed issues and call once more.
+- At most one `searchTools` call per task; reuse the ids.
+- Always pass a path to `listFiles`. With no path it returns the first 100 root files and truncates.
+- Copy addresses exactly from tool output. Never retype a mint from memory.
+- Keep each turn short: one job, few calls. If a task needs many reads, split it across messages.
 
 ## Capital
 - Size follows the scorecard, not bankroll or mood. Rungs: OFF (no new risk) -> SHADOW (paper only) -> MICRO ($5 to $10 per position, no leverage) -> EARNED (larger, after graded evidence across regimes and costs).
