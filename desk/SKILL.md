@@ -8,7 +8,7 @@ description: The desk board and scorecard. Use when Blake says "desk", "board", 
 The desk is **derived**. Runs, reviews, and lab files are the truth; the board is a projection of them. One file, one write, so it fits the one-tap rule.
 
 ## 1. Collect (read only)
-- `listFiles`. Read every `/terminal/runs/*/run.md` (skip `_TEMPLATE`; if more than 60, read the newest 60 and say so).
+- `listFiles` with path `/terminal/runs`, then `/terminal/lab`, then `/research` (never bare: the root page is 100 playbook files and truncates). Read every `/terminal/runs/*/run.md` (skip `_TEMPLATE`; if more than 60, read the newest 60 and say so).
 - Latest `/research/review-*.md`, if any.
 - Every `/terminal/lab/*/exp.md` header (status line only).
 - `/terminal/KILL.md` (`active:` line).
