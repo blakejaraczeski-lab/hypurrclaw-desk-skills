@@ -13,7 +13,7 @@ One file per UTC day: `/research/review-YYYYMMDD.md`. It is both the close for t
 - If the file for that day already exists, rewrite it and add a `refreshed_at:` line. Never write two files for one day.
 
 ## 2. Collect (read only)
-- Every `/terminal/runs/*/run.md`. Note which were opened, reopened, or graded during the day (by `opened_at`, `refreshed_at`, `resolved_at`).
+- `listFiles` with path `/terminal/runs` (never bare), then every `run.md`. Note which were opened, reopened, or graded during the day (by `opened_at`, `refreshed_at`, `resolved_at`).
 - The previous day's review, for its `tomorrow` queue.
 - `/terminal/lab/*/exp.md` status lines.
 - `/terminal/KILL.md`.
