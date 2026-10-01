@@ -25,6 +25,7 @@
 - Always pass a path to `listFiles`. With no path it returns the first 100 root files and truncates.
 - Copy addresses exactly from tool output. Never retype a mint from memory.
 - Keep each turn short: one job, few calls. If a task needs many reads, split it across messages.
+- The numbered playbooks (#01 to #102, root files and `/playbooks`), packs, and FACTORY files are archived history. Do not read or follow them unless Blake names one. Current files: `research/desk/`, `research/book-*.md`, `research/universe-*.md`, `terminal/runs/`, `terminal/lab/`.
 
 ## Capital
 - Size follows the scorecard, not bankroll or mood. Rungs: OFF (no new risk) -> SHADOW (paper only) -> MICRO ($5 to $10 per position, no leverage) -> EARNED (larger, after graded evidence across regimes and costs).
