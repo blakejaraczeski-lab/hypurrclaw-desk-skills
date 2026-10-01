@@ -1,75 +1,39 @@
 ---
 name: desk-automations
-description: Writing, testing, fixing, and landing the output of Blake's crons. Use when Blake says "flush <cron name>", "intake stage0", "write a cron", "fix cron", "automation health", "why did <cron> fail", or when an automation fails with AutomationStepOutputLimitError. Covers the cron prompt rules that stay under the 32k step cap, the test-before-schedule loop, landing a cron's STAGED WRITE block into /research, and opening runs from a Stage-0 file.
+description: Writing, testing, and fixing Blake's crons. Use when Blake says "write a cron", "fix cron", "automation health", "test <cron>", "why did <cron> fail", or names a Desk cron (HL Tape, Risk Sentinel, Unlock Radar, Morning Brief, Attention Radar). Covers the sentinel pattern (silent unless something matters), exact tool ids for prompts, schedule formats, and the test loop.
 ---
 
 # desk-automations
 
-Platform facts this skill is built on:
-- A cron cannot land a file. Its `writeFile` does not leave a ✅ ticket behind. Crons **produce** a fenced block; Blake **lands** it with `flush`.
-- A cron run is killed if its model step passes **32,000 characters** (`AutomationStepOutputLimitError`). Tool calls and their results count against the run in ways that are not documented, so budget both.
-- **Cron output is not stored in full.** Verified 2026-09-30: `automation run output` returned `outputSource: preview`, `outputMissingReason: no_outbox_rows`, 312 characters. So `flush` (section C) cannot land a cron's file. File-producing work runs from chat. Use crons only for alerts and reminders that are fine as a Telegram message.
-- Cron cost verified: the Universe Log run took about 33k input tokens (vs 398k to 920k for the old Stage-0 cron).
-- Web chat input is capped at 1,000 characters. Automation changes staged in one message share one ticket.
-- Automation kinds: plain cron (`createCronAutomation`), scanner, market alert. File-producing jobs must be plain crons; scanners can't be held to fence-only output.
-- `updateAutomation` edits in place (stages ✅). `automation now` runs one immediately.
-- `listFiles` with no path returns the first 100 root files (the playbooks) and truncates. Always pass a path such as `/terminal/runs` or `/research`.
-- `macro scan` (v1) with `mode market` is the working one-call screener (limit at most 25; rows carry address, symbol, mcapUsd, liqUsd, vol24h). `macro scan v2` needs `mode market` too (`mode token` requires an address) and a valid `sortBy`; it returned no data in testing.
+## What a cron is for
+A cron is a **Telegram sentinel**, not a file writer. Verified 2026-10-01: every run's full text reaches Blake's Telegram chat, but the stored run record keeps only a short preview (`no_outbox_rows`), and a cron cannot write files. So crons alert, brief, and remind. Files are written from chat, one ✅ each.
 
-## A. Writing a cron prompt
-Every file-producing cron prompt must:
-1. Be under **1,500 characters**.
-2. State a **tool budget**: "Use at most N tool calls. Do at most 2 searchTools calls; reuse the tool ids."
-3. State an **output budget**: "Total output under 6,000 characters."
-4. Cap rows: at most 10 candidates, at most 30 universe lines.
-5. End with the **output law**: "Output only one fenced block. First line exactly: STAGED WRITE /research/<file>. No prose outside the fence. If there is nothing to write, output only CRON_SUPPRESS."
-6. Name no files to read unless needed; never write files; never stage trades or buttons.
-7. Be self-contained. Don't rely on skills inside crons until a test shows the cron runner can see them.
+Blake's local engine computes signals and grades. It writes `research/desk/book.md` (this week's book, entries, core levels, breaker, new listing) for crons to read. Crons never recompute returns beyond one division per line.
 
-### Stage-0 template (plain cron, every 60 min)
-```
-Stage-0 SOL scan. Read-only. At most 13 tool calls; 1 searchTools call for ids (macro scan v2, analyze token). Output under 6,000 chars.
-Universe: one macro scan (v1) call: mode market, chain sol, minLiquidityUsd 15000, minVolume24h 25000, minMarketCapUsd 50000, maxMarketCapUsd 5000000, limit 25. Then analyze token on at most 10 of them, best liquidity first.
-Gates: not honeypot; buy and sell tax <= 5%; mint and freeze authority off; LP burned or locked (removable fails); top10 ex pool <= 35%; no heavy bundler/sniper/dev cluster; 24h vol not above 50x liq.
-Output only one fenced block. First line exactly: STAGED WRITE /research/stage0-YYYYMMDD-HH.md (UTC). Then:
-# stage0 YYYY-MM-DD HH:00 UTC
-## universe (max 30)
-- <full mint> | <ticker> | mcap | liq | first failed gate or PASS
-## a_setups (max 10, all gates PASS)
-- mint: <full> | ticker: | liq: | mcap: | top10: | lp: | claim: <24h numeric claim> | p: <0-1> | invalidation: <kill>
-No prose outside the fence. If the universe is empty, output only CRON_SUPPRESS.
-```
-The `## universe` section records every eligible token, not just passes, so the lab has an honest denominator.
+## Writing a prompt
+1. Under 1,000 characters for the whole chat message (the web input cap).
+2. Name the tools. Start with "No getToolDetails, no searchTools; tools via executeSafeReadTool." Known ids:
+   - getHyperliquidMarketSnapshot (one coin: funding APR pct, open interest, mark, prev day price)
+   - getHyperliquidExchangeOverview (mids for every market, one call)
+   - getHyperliquidCandles, getPerpsMarketRegime
+   - getHyperliquidAllPerpMetas (every dex; output gets truncated, so don't rely on it for listing detection)
+   - getCoinalyzeFunding (up to 20 coins, per-interval rates, rate-limits), getCoinalyzePositioning
+   - macro scan (v1): mode market, chain sol, limit at most 25
+   - web_search, open_page, readFile
+3. Silence rule: "If nothing to report, reply exactly CRON_SUPPRESS." A scheduled run then sends nothing. A manual run sends an all-clear.
+4. Failure rule: report a degraded read in one line only when most reads fail. Never present Unknown as clear.
+5. End with "No trades, no writes."
+6. Creation phrasing that works: "Create a plain cron automation (createCronAutomation, not a scanner) named X, schedule Y, active, with exactly this prompt: ..."
+7. Schedules: "every N minutes" or "daily at HH:MM UTC". Offsets like `30 */4 * * *` are rejected.
 
-### Daily Review template (plain cron, 00:00 UTC)
-```
-Daily close for the previous UTC day. Read-only. At most 15 tool calls; at most 2 searchTools calls. Output under 8,000 chars.
-Read /terminal/runs/*/run.md, the previous /research/review-*.md, /terminal/KILL.md, and listAutomations.
-Output only one fenced block. First line exactly: STAGED WRITE /research/review-YYYYMMDD.md. Body sections: scorecard (runs, open, graded, due, hit_rate, brier, ignore_rate), day (opened, graded, due, missing_prediction), decisions (at least one decision line, or one no_trade line), lessons (max 3), automations, tomorrow (max 10 ranked tasks), debt.
-No prose outside the fence.
-```
+## Test loop
+1. Create or `updateAutomation` (✅).
+2. `runAutomationNow` (✅). Several runs in one message share one ticket.
+3. Read the result in Telegram, or `listAutomationRuns` then `getAutomationRunOutput`.
+4. Pass: the right lines or CRON_SUPPRESS, real numbers copied from tools, no noise. Fail: name the missing tool or field and fix the prompt, then rerun.
 
-## B. Test before schedule
-1. Create or update the cron (stages ✅; Blake taps).
-2. `automation now` on it.
-3. `automation runs` for the new run id, then `automation run output` for the full text.
-4. Check: finished without error; output is one fence (or CRON_SUPPRESS); the path starts with `/research/`; row caps held; total under the budget.
-5. Only then leave it scheduled. If it fails, cut the tool budget or row caps and repeat. Report each test as `test N: ok | failed (<error>) · chars · rows`.
-
-## C. flush <cron name>
-1. `listAutomations`; match the name or id exactly.
-2. `automation runs` -> latest run id -> `automation run output` (full text, never the 500-char preview).
-3. Find exactly one fenced block whose first line is `STAGED WRITE <path>`.
-4. Refuse, with the reason, if: no output, no fence, more than one fence, empty body, or `<path>` does not start with `/research/` or contains `..`.
-5. Stage one `writeFile` with the body **unchanged**. "Staged, tap ✅" until the receipt.
-
-## D. intake stage0 [YYYYMMDD-HH]
-1. Read the named `/research/stage0-*.md` (default: the newest). Missing: refuse and suggest `flush` first.
-2. For each `a_setups` row, oldest first: run the `ca-intake` flow with `source: stage0-<stamp>`, using the row's claim, p, and invalidation as the prediction (after fresh live reads confirm the gates still pass; if they don't, the verdict reflects today's reads and the prediction still comes from the row).
-3. One run.md write per row, one tap each. If taps stop: `partial: N of M runs opened` and list the remaining mints.
-
-## E. automation health
-`listAutomations`, then the last 3 `automation runs` per active automation. Report per automation: status, last 3 results, error names. For `AutomationStepOutputLimitError`: apply section A (tighter budgets), then section B. For provider stream errors, retry once before changing anything. Five consecutive failures auto-pause a cron; resume only after a passing test.
+## automation health
+`listAutomations`, then the last 3 runs per active automation: status, suppressed or delivered, errors. Five consecutive failures auto-pause a cron; resume only after a passing test.
 
 ## Never
-Stage trades or buy buttons from a cron. Land a file outside `/research/` with flush. Paraphrase a flushed body. Schedule an untested prompt.
+Stage trades or wallet actions from a cron. Schedule an untested prompt. Rebuild the old file-producing crons (Stage-0, Universe Log cron, Daily research queue); they are archived.
